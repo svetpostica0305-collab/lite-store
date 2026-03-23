@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebCall</title>
+<link rel="manifest" href="manifest-wco.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WCO 1W">
+<meta name="theme-color" content="#00d4ff">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0a0e1a; color:#c8e6ff; font-family:monospace; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+.phone { width:100%; max-width:340px; background:#0f1628; border:1px solid #1e3a5f; border-radius:20px; padding:20px; }
+.title { text-align:center; font-size:20px; color:#00d4ff; letter-spacing:3px; margin-bottom:6px; }
+.sub { text-align:center; font-size:10px; color:#4a7a9b; margin-bottom:16px; }
+.status { text-align:center; font-size:11px; color:#4a7a9b; margin-bottom:16px; }
+.myid-box { background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.2); border-radius:10px; padding:12px; text-align:center; margin-bottom:16px; }
+.myid-label { font-size:9px; color:#4a7a9b; letter-spacing:2px; margin-bottom:6px; }
+.myid { font-size:26px; color:#00d4ff; letter-spacing:4px; cursor:pointer; }
+.myid-hint { font-size:9px; color:#4a7a9b; margin-top:4px; }
+.display { background:rgba(0,0,0,0.3); border:1px solid #1e3a5f; border-radius:10px; padding:12px 14px; margin-bottom:12px; display:flex; align-items:center; min-height:50px; }
+.num { font-size:22px; color:#fff; letter-spacing:2px; flex:1; }
+.ph { font-size:12px; color:#4a7a9b; flex:1; }
+.bk { background:none; border:none; color:#4a7a9b; font-size:20px; cursor:pointer; padding:4px 8px; }
+.keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.key { background:rgba(255,255,255,0.03); border:1px solid #1e3a5f; border-radius:10px; padding:12px 0; text-align:center; cursor:pointer; }
+.key:active { background:rgba(0,212,255,0.1); border-color:#00d4ff; }
+.kd { font-size:20px; color:#fff; }
+.kl { font-size:7px; color:#4a7a9b; margin-top:2px; }
+.btn { border:none; border-radius:12px; padding:14px; font-size:13px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:8px; }
+.call { background:linear-gradient(135deg,#00c853,#00e676); color:#001a00; }
+.call:disabled { background:rgba(255,255,255,0.1); color:#4a7a9b; cursor:not-allowed; }
+.hang { background:linear-gradient(135deg,#c62828,#ff3b5c); color:#fff; }
+.row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mute, .vid { background:rgba(255,255,255,0.05); border:1px solid #1e3a5f; border-radius:12px; padding:12px; font-size:11px; color:#c8e6ff; cursor:pointer; }
+.mute.on, .vid.on { background:rgba(0,212,255,0.15); border-color:#00d4ff; color:#00d4ff; }
+.callscreen { text-align:center; margin-bottom:12px; }
+.callpeer { font-size:24px; color:#fff; letter-spacing:4px; margin-bottom:6px; }
+.calltimer { font-size:12px; color:#00ff88; }
+.overlay { position:fixed; inset:0; background:rgba(10,14,26,0.97); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; z-index:99; }
+.ring { width:70px; height:70px; border-radius:50%; background:linear-gradient(135deg,#00d4ff,#00ff88); display:flex; align-items:center; justify-content:center; font-size:28px; animation:rng 1s infinite; }
+@keyframes rng { 0%{box-shadow:0 0 0 0 rgba(0,212,255,0.5)} 70%{box-shadow:0 0 0 20px rgba(0,212,255,0)} 100%{box-shadow:0 0 0 0 rgba(0,212,255,0)} }
+.inc-from { font-size:26px; color:#00d4ff; letter-spacing:4px; }
+.inc-btns { display:flex; gap:20px; }
+.acc, .dec { width:56px; height:56px; border-radius:50%; border:none; font-size:22px; cursor:pointer; }
+.acc { background:linear-gradient(135deg,#00c853,#00e676); }
+.dec { background:linear-gradient(135deg,#c62828,#ff3b5c); color:#fff; }
+.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,212,255,0.15); border:1px solid rgba(0,212,255,0.3); color:#00d4ff; padding:8px 16px; border-radius:20px; font-size:11px; display:none; z-index:200; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="title">WEBCALL</div>
+  <div class="sub">WebRTC · P2P · БЕЗ SIM</div>
+  <div class="status" id="st">ПОДКЛЮЧЕНИЕ...</div>
+
+  <div class="myid-box">
+    <div class="myid-label">МОЙ ID</div>
+    <div class="myid" id="myid" onclick="copyId()">----</div>
+    <div class="myid-hint" id="hint">нажми чтобы скопировать</div>
+  </div>
+
+  <div id="dialUI">
+    <div class="display">
+      <div id="dn" class="ph">введи ID друга...</div>
+      <button class="bk" onclick="bk()">⌫</button>
+    </div>
+    <div class="keypad">
+      <div class="key" onclick="pk('1')"><div class="kd">1</div></div>
+      <div class="key" onclick="pk('2')"><div class="kd">2</div><div class="kl">ABC</div></div>
+      <div class="key" onclick="pk('3')"><div class="kd">3</div><div class="kl">DEF</div></div>
+      <div class="key" onclick="pk('4')"><div class="kd">4</div><div class="kl">GHI</div></div>
+      <div class="key" onclick="pk('5')"><div class="kd">5</div><div class="kl">JKL</div></div>
+      <div class="key" onclick="pk('6')"><div class="kd">6</div><div class="kl">MNO</div></div>
+      <div class="key" onclick="pk('7')"><div class="kd">7</div><div class="kl">PQRS</div></div>
+      <div class="key" onclick="pk('8')"><div class="kd">8</div><div class="kl">TUV</div></div>
+      <div class="key" onclick="pk('9')"><div class="kd">9</div><div class="kl">WXYZ</div></div>
+      <div class="key" onclick="pk('*')"><div class="kd">*</div></div>
+      <div class="key" onclick="pk('0')"><div class="kd">0</div></div>
+      <div class="key" onclick="pk('#')"><div class="kd">#</div></div>
+    </div>
+    <button class="btn call" id="callBtn" onclick="makeCall()" disabled>📞 ПОЗВОНИТЬ</button>
+  </div>
+
+  <div id="callUI" style="display:none">
+    <div class="callscreen">
+      <div class="callpeer" id="cpeer"></div>
+      <div class="calltimer" id="ctimer">00:00</div>
+    </div>
+    <button class="btn hang" onclick="hangUp()">📵 ЗАВЕРШИТЬ</button>
+  </div>
+
+  <div class="row" style="margin-top:8px">
+    <button class="mute" id="muteBtn" onclick="toggleMute()">🎤 МИК</button>
+    <button class="vid" id="vidBtn" onclick="toggleVid()">📷 ВИДЕО</button>
+  </div>
+</div>
+
+<div class="overlay" id="inc" style="display:none">
+  <div class="ring">📞</div>
+  <div style="font-size:10px;color:#4a7a9b;letter-spacing:2px">ВХОДЯЩИЙ ЗВОНОК</div>
+  <div class="inc-from" id="incFrom"></div>
+  <div class="inc-btns">
+    <button class="acc" onclick="acceptCall()">✓</button>
+    <button class="dec" onclick="declineCall()">✕</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var peer=null, call=null, stream=null, incCall=null;
+var inp='', muted=false, vid=false, tsec=0, tint=null;
+
+function g(id){return document.getElementById(id);}
+
+function toast(msg,d){
+  var t=g('toast'); t.textContent=msg; t.style.display='block';
+  setTimeout(function(){t.style.display='none';},d||2000);
+}
+
+function st(msg){g('st').textContent=msg;}
+
+function upd(){
+  var el=g('dn');
+  if(inp){el.textContent=inp;el.className='num';}
+  else{el.textContent='введи ID друга...';el.className='ph';}
+  g('callBtn').disabled=inp.length<2||!peer;
+}
+
+function pk(k){if(!call){inp+=k;upd();}}
+function bk(){if(!call){inp=inp.slice(0,-1);upd();}}
+
+function copyId(){
+  var id=g('myid').textContent;
+  if(id==='----')return;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(id).then(function(){
+      g('hint').textContent='✓ скопировано!';
+      setTimeout(function(){g('hint').textContent='нажми чтобы скопировать';},2000);
+    });
+  }
+}
+
+function startTimer(){
+  tsec=0;
+  tint=setInterval(function(){
+    tsec++;
+    var m=String(Math.floor(tsec/60)).padStart(2,'0');
+    var s=String(tsec%60).padStart(2,'0');
+    g('ctimer').textContent=m+':'+s;
+  },1000);
+}
+
+function stopTimer(){clearInterval(tint);g('ctimer').textContent='00:00';}
+
+function showCall(pid){
+  g('dialUI').style.display='none';
+  g('callUI').style.display='block';
+  g('cpeer').textContent=pid;
+}
+
+function hideCall(){
+  g('dialUI').style.display='block';
+  g('callUI').style.display='none';
+  stopTimer();
+  inp='';upd();
+}
+
+function ended(){
+  call=null;
+  if(stream){stream.getTracks().forEach(function(t){t.stop();});stream=null;}
+  hideCall();
+  st('ОНЛАЙН ✓');
+}
+
+function getMedia(cb){
+  navigator.mediaDevices.getUserMedia({audio:true,video:vid})
+  .then(cb)
+  .catch(function(){
+    navigator.mediaDevices.getUserMedia({audio:true})
+    .then(cb)
+    .catch(function(){toast('Нет доступа к микрофону!',3000);});
+  });
+}
+
+function makeCall(){
+  if(!peer||!inp)return;
+  var t=inp;
+  getMedia(function(s){
+    stream=s;
+    call=peer.call(t,s);
+    showCall(t);
+    st('ЗВОНОК...');
+    call.on('stream',function(){st('РАЗГОВОР ✓');startTimer();});
+    call.on('close',ended);
+    call.on('error',function(e){toast('Ошибка: '+e.message,3000);ended();});
+  });
+}
+
+function hangUp(){if(call)call.close();ended();}
+
+function acceptCall(){
+  if(!incCall)return;
+  g('inc').style.display='none';
+  var c=incCall; incCall=null;
+  getMedia(function(s){
+    stream=s;
+    c.answer(s);
+    call=c;
+    showCall(c.peer);
+    call.on('stream',function(){st('РАЗГОВОР ✓');startTimer();});
+    call.on('close',ended);
+  });
+}
+
+function declineCall(){
+  if(incCall){incCall.close();incCall=null;}
+  g('inc').style.display='none';
+  st('ОНЛАЙН ✓');
+}
+
+function toggleMute(){
+  muted=!muted;
+  if(stream)stream.getAudioTracks().forEach(function(t){t.enabled=!muted;});
+  g('muteBtn').textContent=muted?'🔇 БЕЗ ЗВУКА':'🎤 МИК';
+  g('muteBtn').className=muted?'mute on':'mute';
+}
+
+function toggleVid(){
+  vid=!vid;
+  g('vidBtn').textContent=vid?'📷 ВКЛ':'📷 ВИДЕО';
+  g('vidBtn').className=vid?'vid on':'vid';
+  toast(vid?'Видео включено':'Только аудио');
+}
+
+function start(id){
+  peer=new Peer(id,{
+    host:'0.peerjs.com',port:443,path:'/',secure:true,debug:0,
+    config:{iceServers:[{urls:'stun:stun.l.google.com:19302'}]}
+  });
+  peer.on('open',function(oid){
+    g('myid').textContent=oid;
+    st('ОНЛАЙН ✓');
+    upd();
+  });
+  peer.on('call',function(c){
+    incCall=c;
+    g('incFrom').textContent=c.peer;
+    g('inc').style.display='flex';
+    st('ВХОДЯЩИЙ ЗВОНОК');
+  });
+  peer.on('error',function(err){
+    if(err.type==='unavailable-id'){
+      toast('ID занят! Выбери другой.',3000);
+      localStorage.removeItem('myPeerId');
+      peer.destroy();peer=null;
+      setTimeout(askName,1000);
+      return;
+    }
+    st('ОШИБКА - обнови страницу');
+  });
+  peer.on('disconnected',function(){st('ПЕРЕПОДКЛЮЧЕНИЕ...');peer.reconnect();});
+}
+
+function askName(){
+  var name=prompt('Введи свой ID:\n(латиница и цифры, мин. 2 символа)\nНапример: svet или pc1');
+  if(!name)name='user'+Math.floor(1000+Math.random()*9000);
+  name=name.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(name.length<2)name='user'+Math.floor(1000+Math.random()*9000);
+  localStorage.setItem('myPeerId',name);
+  start(name);
+}
+
+var saved=localStorage.getItem('myPeerId');
+if(saved){start(saved);}
+else{askName();}
+</script>
+</body>
+</html>

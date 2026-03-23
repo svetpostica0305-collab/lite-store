@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lite Store</title>
+<link rel="manifest" href="manifest-litestore.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lite Store">
+<meta name="theme-color" content="#00c8ff">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c14;
+  --panel: #0d1320;
+  --card: #111827;
+  --border: #1a2d4a;
+  --accent: #00c8ff;
+  --accent2: #00ff9d;
+  --orange: #ff6b2b;
+  --text: #d0e8ff;
+  --dim: #3d6080;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Share Tech Mono',monospace; min-height:100vh; }
+
+/* Header */
+.header { background:var(--panel); border-bottom:1px solid var(--border); padding:16px 20px; position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.logo-text { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:#fff; letter-spacing:2px; }
+.logo-version { font-size:9px; color:var(--dim); letter-spacing:1px; margin-top:-4px; }
+.header-right { display:flex; align-items:center; gap:12px; }
+.search-btn { background:rgba(0,200,255,0.08); border:1px solid var(--border); border-radius:8px; color:var(--dim); padding:8px 14px; font-size:12px; cursor:pointer; font-family:'Share Tech Mono',monospace; }
+.submit-btn { background:linear-gradient(135deg,var(--orange),#ff9f2b); border:none; border-radius:8px; color:#fff; padding:8px 14px; font-size:11px; font-weight:700; cursor:pointer; font-family:'Rajdhani',sans-serif; letter-spacing:1px; }
+
+/* Hero */
+.hero { padding:40px 20px 30px; text-align:center; position:relative; overflow:hidden; }
+.hero::before { content:''; position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:300px; height:300px; background:radial-gradient(circle, rgba(0,200,255,0.06) 0%, transparent 70%); pointer-events:none; }
+.hero-tag { display:inline-block; background:rgba(0,255,157,0.1); border:1px solid rgba(0,255,157,0.3); border-radius:20px; padding:4px 14px; font-size:10px; color:var(--accent2); letter-spacing:2px; margin-bottom:14px; }
+.hero-title { font-family:'Rajdhani',sans-serif; font-size:36px; font-weight:700; color:#fff; letter-spacing:2px; line-height:1.1; margin-bottom:8px; }
+.hero-title span { color:var(--accent); }
+.hero-sub { font-size:11px; color:var(--dim); letter-spacing:1px; }
+
+/* Stats */
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:0 20px 24px; }
+.stat { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 10px; text-align:center; }
+.stat-num { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--accent); }
+.stat-label { font-size:9px; color:var(--dim); letter-spacing:1px; margin-top:2px; }
+
+/* Categories */
+.section { padding:0 20px 24px; }
+.section-title { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:600; color:var(--dim); letter-spacing:3px; margin-bottom:12px; }
+.cats { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.cats::-webkit-scrollbar { display:none; }
+.cat { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 14px; font-size:11px; color:var(--text); cursor:pointer; white-space:nowrap; transition:all 0.2s; display:flex; align-items:center; gap:6px; }
+.cat:hover, .cat.active { background:rgba(0,200,255,0.1); border-color:var(--accent); color:var(--accent); }
+
+/* Apps grid */
+.apps { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 20px 100px; }
+.app-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; transition:all 0.2s; cursor:pointer; position:relative; overflow:hidden; }
+.app-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; opacity:0; transition:opacity 0.2s; }
+.app-card:hover { border-color:rgba(0,200,255,0.3); transform:translateY(-2px); }
+.app-card:hover::before { opacity:1; }
+.app-card.featured::before { background:linear-gradient(90deg,var(--accent),var(--accent2)); opacity:1; }
+.app-card.featured { border-color:rgba(0,200,255,0.25); }
+.app-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:10px; }
+.app-name { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:#fff; margin-bottom:2px; }
+.app-dev { font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:8px; }
+.app-desc { font-size:10px; color:#6a8caa; line-height:1.5; margin-bottom:10px; }
+.app-footer { display:flex; align-items:center; justify-content:space-between; }
+.app-cat { font-size:8px; color:var(--dim); background:rgba(255,255,255,0.04); border-radius:4px; padding:2px 6px; letter-spacing:1px; }
+.install-btn { background:linear-gradient(135deg,var(--accent),#0099cc); border:none; border-radius:8px; color:#000; font-size:9px; font-weight:700; padding:5px 10px; cursor:pointer; font-family:'Rajdhani',sans-serif; letter-spacing:1px; transition:all 0.15s; }
+.install-btn:active { transform:scale(0.95); }
+.install-btn.installed { background:rgba(0,255,157,0.15); color:var(--accent2); border:1px solid rgba(0,255,157,0.3); }
+.badge-new { position:absolute; top:10px; right:10px; background:var(--orange); color:#fff; font-size:7px; font-weight:700; padding:2px 6px; border-radius:4px; letter-spacing:1px; }
+.badge-featured { position:absolute; top:10px; right:10px; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#000; font-size:7px; font-weight:700; padding:2px 6px; border-radius:4px; letter-spacing:1px; }
+
+/* Bottom nav */
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; background:var(--panel); border-top:1px solid var(--border); display:flex; padding:10px 0 20px; z-index:100; }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:6px 0; }
+.nav-icon { font-size:20px; }
+.nav-label { font-size:8px; color:var(--dim); letter-spacing:1px; }
+.nav-item.active .nav-label { color:var(--accent); }
+
+/* Submit overlay */
+.overlay { position:fixed; inset:0; background:rgba(8,12,20,0.95); z-index:200; display:none; flex-direction:column; overflow-y:auto; }
+.overlay.show { display:flex; }
+.overlay-header { display:flex; align-items:center; justify-content:space-between; padding:20px; border-bottom:1px solid var(--border); }
+.overlay-title { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:700; color:#fff; letter-spacing:2px; }
+.close-btn { background:none; border:none; color:var(--dim); font-size:24px; cursor:pointer; }
+.form { padding:20px; display:flex; flex-direction:column; gap:16px; }
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-label { font-size:10px; color:var(--dim); letter-spacing:2px; }
+.form-input { background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:10px; color:#fff; font-family:'Share Tech Mono',monospace; font-size:13px; padding:12px 14px; outline:none; }
+.form-input:focus { border-color:var(--accent); }
+.form-input::placeholder { color:var(--dim); }
+.form-textarea { resize:none; height:80px; }
+.form-submit { background:linear-gradient(135deg,var(--orange),#ff9f2b); border:none; border-radius:12px; color:#fff; font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; letter-spacing:2px; padding:16px; cursor:pointer; margin-top:8px; }
+.form-note { font-size:9px; color:var(--dim); text-align:center; line-height:1.6; }
+
+/* Toast */
+.toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(0,255,157,0.15); border:1px solid rgba(0,255,157,0.3); color:var(--accent2); padding:8px 18px; border-radius:20px; font-size:11px; display:none; z-index:300; white-space:nowrap; }
+.toast.show { display:block; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">LITE STORE</div>
+      <div class="logo-version">v1.0 · FREE APPS ONLY</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="submit-btn" onclick="showSubmit()">+ SUBMIT</button>
+  </div>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-tag">✓ ПРОВЕРЕНО · БЕЗ ВИРУСОВ</div>
+  <div class="hero-title">Приложения<br>для <span>всех</span></div>
+  <div class="hero-sub">БЕСПЛАТНО · БЕЗОПАСНО · БЕЗ РЕКЛАМЫ</div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num" id="appCount">1</div>
+    <div class="stat-label">ПРИЛОЖЕНИЙ</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">100%</div>
+    <div class="stat-label">БЕСПЛАТНО</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">✓</div>
+    <div class="stat-label">ПРОВЕРЕНО</div>
+  </div>
+</div>
+
+<!-- Categories -->
+<div class="section">
+  <div class="section-title">КАТЕГОРИИ</div>
+  <div class="cats">
+    <div class="cat active" onclick="filterCat('all',this)">🌐 Все</div>
+    <div class="cat" onclick="filterCat('comm',this)">📞 Связь</div>
+    <div class="cat" onclick="filterCat('games',this)">🎮 Игры</div>
+    <div class="cat" onclick="filterCat('tools',this)">🔧 Утилиты</div>
+    <div class="cat" onclick="filterCat('media',this)">🎵 Медиа</div>
+  </div>
+</div>
+
+<!-- Apps -->
+<div class="section-title" style="padding:0 20px 12px">ПРИЛОЖЕНИЯ</div>
+<div class="apps" id="appsGrid">
+
+  <!-- WCO -->
+  <div class="app-card featured" data-cat="comm">
+    <div class="badge-featured">★ FEATURED</div>
+    <div class="app-icon" style="background:linear-gradient(135deg,#0a1628,#1a3a5f)">📞</div>
+    <div class="app-name">WCO 1W</div>
+    <div class="app-dev">SVETPOSTICA · WCO</div>
+    <div class="app-desc">WebCall Online — звонки через интернет без SIM карты. P2P технология.</div>
+    <div class="app-footer">
+      <div class="app-cat">СВЯЗЬ</div>
+      <button class="install-btn" onclick="installApp(this,'https://svetpostica0305-collab.github.io/Phone/phone.html')">УСТАНОВИТЬ</button>
+    </div>
+  </div>
+
+  <!-- Placeholder cards -->
+  <div class="app-card" data-cat="games">
+    <div class="badge-new">СКОРО</div>
+    <div class="app-icon" style="background:linear-gradient(135deg,#1a0a28,#3a1a5f)">🎮</div>
+    <div class="app-name">???</div>
+    <div class="app-dev">???</div>
+    <div class="app-desc">Скоро появится новое приложение. Следите за обновлениями!</div>
+    <div class="app-footer">
+      <div class="app-cat">ИГРЫ</div>
+      <button class="install-btn" disabled style="opacity:0.4;cursor:not-allowed">СКОРО</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom nav -->
+<div class="bottom-nav">
+  <div class="nav-item active">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">ГЛАВНАЯ</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">🔍</div>
+    <div class="nav-label">ПОИСК</div>
+  </div>
+  <div class="nav-item" onclick="showSubmit()">
+    <div class="nav-icon">📤</div>
+    <div class="nav-label">SUBMIT</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">О НАС</div>
+  </div>
+</div>
+
+<!-- Submit overlay -->
+<div class="overlay" id="submitOverlay">
+  <div class="overlay-header">
+    <div class="overlay-title">ОТПРАВИТЬ ПРИЛОЖЕНИЕ</div>
+    <button class="close-btn" onclick="hideSubmit()">✕</button>
+  </div>
+  <div class="form">
+    <div class="form-group">
+      <div class="form-label">НАЗВАНИЕ ПРИЛОЖЕНИЯ</div>
+      <input class="form-input" placeholder="например: My App" id="appName"/>
+    </div>
+    <div class="form-group">
+      <div class="form-label">ИМЯ РАЗРАБОТЧИКА</div>
+      <input class="form-input" placeholder="ваше имя или ник" id="devName"/>
+    </div>
+    <div class="form-group">
+      <div class="form-label">ССЫЛКА НА ПРИЛОЖЕНИЕ</div>
+      <input class="form-input" placeholder="https://..." id="appUrl"/>
+    </div>
+    <div class="form-group">
+      <div class="form-label">КАТЕГОРИЯ</div>
+      <select class="form-input" id="appCat">
+        <option value="comm">📞 Связь</option>
+        <option value="games">🎮 Игры</option>
+        <option value="tools">🔧 Утилиты</option>
+        <option value="media">🎵 Медиа</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <div class="form-label">ОПИСАНИЕ</div>
+      <textarea class="form-input form-textarea" placeholder="Опишите ваше приложение..." id="appDesc"></textarea>
+    </div>
+    <button class="form-submit" onclick="submitApp()">📤 ОТПРАВИТЬ НА ПРОВЕРКУ</button>
+    <div class="form-note">Все приложения проходят проверку на безопасность перед публикацией.<br>Только бесплатные приложения принимаются.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function toast(msg, dur) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, dur || 2500);
+}
+
+function showSubmit() {
+  document.getElementById('submitOverlay').classList.add('show');
+}
+
+function hideSubmit() {
+  document.getElementById('submitOverlay').classList.remove('show');
+}
+
+function installApp(btn, url) {
+  window.open(url, '_blank');
+}
+
+function filterCat(cat, el) {
+  document.querySelectorAll('.cat').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  document.querySelectorAll('.app-card').forEach(function(card){
+    if (cat === 'all' || card.dataset.cat === cat) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+function submitApp() {
+  var name = document.getElementById('appName').value.trim();
+  var dev = document.getElementById('devName').value.trim();
+  var url = document.getElementById('appUrl').value.trim();
+  var desc = document.getElementById('appDesc').value.trim();
+  if (!name || !dev || !url || !desc) {
+    toast('⚠ Заполни все поля!'); return;
+  }
+  hideSubmit();
+  toast('✓ Заявка отправлена на проверку!', 3000);
+  document.getElementById('appName').value = '';
+  document.getElementById('devName').value = '';
+  document.getElementById('appUrl').value = '';
+  document.getElementById('appDesc').value = '';
+}
+</script>
+</body>
+</html>
